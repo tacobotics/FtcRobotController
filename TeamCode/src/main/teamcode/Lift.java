@@ -1,15 +1,14 @@
 /*
  Todo
  *Clock intake
- *Speed up extension/retraction
+ *Speed up extension/retraction -- done for now
  *Clean up states
- *Fix yeeting
- *Auto outake
+ *Fix yeeting -- hardware
+ *Auto outake -- done
  */
 
 package org.firstinspires.ftc.teamcode;
 
-import static java.lang.Math.abs;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.PwmControl;
@@ -19,12 +18,13 @@ import com.qualcomm.robotcore.util.ElapsedTime;
 
 
 public class Lift {
-    public DcMotor winch;
+    static DcMotor winch;
     public Servo rarm;
     public Servo larm;
     public Servo turret;
     public Servo dump;
     public Servo upTake;
+    public Servo finger;
 
     public enum LiftState {
         ARM_DOWN,
@@ -46,9 +46,12 @@ public class Lift {
 
     LiftState liftState = LiftState.TAKE;
 
-    public double takeDown = .32;
+    public double takeDown = .6;
     public double takeUp = 0;
 
+    static double winchPos;
+    static boolean blip = false;
+    static boolean blop = false;
     public boolean low = false;
     public boolean positioned = false;
     public boolean center = true;
@@ -70,6 +73,7 @@ public class Lift {
         turret = lift.hardwareMap.get(Servo.class, "turret");
         dump = lift.hardwareMap.get(Servo.class, "dump");
         upTake = lift.hardwareMap.servo.get("upTake");
+        finger = lift.hardwareMap.servo.get("finger");
 
         ((PwmControl)rarm).setPwmRange(new PwmControl.PwmRange(500, 2500));
         ((PwmControl)larm).setPwmRange(new PwmControl.PwmRange(500, 2500));
@@ -88,8 +92,11 @@ public class Lift {
         winch.setPower(power);
     }
 
+    static double winchPos(){
+        return (winch.getCurrentPosition());
+    }
 
-    public void armState(boolean y, double stick, boolean x, boolean left, boolean up, boolean right, boolean down){
+    public void armState(boolean y, double leftTrig, double rightTrig, boolean x, boolean left, boolean up, boolean right, boolean down){
         switch (liftState) {
             case ARM_DOWN:
                     dump.setPosition(.35);
@@ -102,6 +109,7 @@ public class Lift {
 
             case LIFT_DOWN:
                 if (timerlift.seconds() >= .2) {
+                    blip = false;
                     turret.setPosition(.49);
                     timerlift.reset();
                     liftState = LiftState.ARM_CLEAR;
@@ -130,7 +138,7 @@ public class Lift {
 
             case LIFT_TAKE:
                 if (timerlift.seconds() >= .75) {
-                    liftRTP(70, .5);
+                    liftRTP(50, 1);
                     upTake.setPosition(takeUp);
                     timerlift.reset();
                     liftState = LiftState.TAKE;
@@ -149,16 +157,23 @@ public class Lift {
                     tRight = true;
                 } else if (up){
                     liftState = LiftState.UPM;
-                } else if (abs(stick) > .3) {
+                } else if ((leftTrig > .3 || rightTrig > .3) && !Intake.full) {
                     dump.setPosition(.4);
                     liftRTP(0, 1);
                     upTake.setPosition(takeDown);
                     armRTP(0);
-                } else if (abs(stick) < .3) {
+                    finger.setPosition(.75);
+                } else if (leftTrig < .3 || rightTrig < .3) {
                     dump.setPosition(.35);
-                    armRTP(.01);
+                    armRTP(.02);
                     upTake.setPosition(takeDown);
-                    liftRTP(70, 1);
+                    liftRTP(50, 1);
+                    if (winch.getCurrentPosition() < 25){
+                        blop = true;
+                    } else {
+                        finger.setPosition(1);
+                        blop = false;
+                    }
                 }
                 break;
 
@@ -170,7 +185,7 @@ public class Lift {
                 timerlift.reset();
                 positioned = true;
                 center = false;
-                liftRTP(405, .5);
+                liftRTP(400, 1);
                 liftState = LiftState.UP_WAIT;
                 break;
 
@@ -190,6 +205,7 @@ public class Lift {
                 upTake.setPosition(takeUp);
                     if (x) {
                         dump.setPosition(.4);
+                        finger.setPosition(.5);
                         timerlift.reset();
                         liftState = LiftState.DUMP_BACK;
                     } else if (left){
@@ -202,7 +218,7 @@ public class Lift {
                         isCentered = false;
                         low = true;
                     } else if (up){
-                        armRTP(.8);
+                        armRTP(.75);
                         turret.setPosition(.49);
                         isCentered = true;
                     }
@@ -210,7 +226,8 @@ public class Lift {
 
             case DUMP_BACK:
                 if (low){
-                    if (timerlift.seconds() >= 1.75){
+                    if (timerlift.seconds() >= .5){
+                        blip = true;
                         upTake.setPosition(takeDown);
                         dump.setPosition(.35);
                         low = false;
@@ -218,6 +235,7 @@ public class Lift {
                     }
                 } else {
                     if (timerlift.seconds() >= .5){
+                        blip = true;
                         upTake.setPosition(takeDown);
                         dump.setPosition(.35);
                         liftState = LiftState.ARM_DOWN;
@@ -239,7 +257,7 @@ public class Lift {
                 timerlift.reset();
                 positioned = true;
                 center = false;
-                liftRTP(70, .5);
+                liftRTP(50, 1);
                 liftState = LiftState.UPM_WAIT;
                 break;
 
@@ -256,26 +274,28 @@ public class Lift {
 
             case UPM_WAIT:
                 if (timerlift.seconds() >= .25){
+                    if (!tLeft && !tRight){
+                        liftRTP(250, 1);
+                    }
                     dump.setPosition(.8);
                     liftState = LiftState.UP2M;
                 }
 
             case UP3M:
-                if (timerlift.seconds() >= 1){
+                if (timerlift.seconds() >= .25){
                     upTake.setPosition(takeUp);
                     if (tLeft){
                         turret.setPosition(.25);
-                        liftRTP(0, .5);
+                        liftRTP(0, 1);
                         isCentered = false;
                     } else if (tRight){
                         turret.setPosition(.75);
-                        liftRTP(0, .5);
+                        liftRTP(0, 1);
                         isCentered = false;
-                    } else {
-                        liftRTP(250, .5);
                     }
                     if (x) {
                         dump.setPosition(.6);
+                        finger.setPosition(.5);
                         timerlift.reset();
                         if (tRight || tLeft){
                             tLeft = false;
