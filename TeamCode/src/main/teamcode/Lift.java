@@ -46,7 +46,7 @@ public class Lift {
 
     LiftState liftState = LiftState.TAKE;
 
-    public double takeDown = .6;
+    public double takeDown = .7;
     public double takeUp = 0;
 
     static double winchPos;

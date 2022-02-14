@@ -4,7 +4,7 @@ import com.qualcomm.hardware.rev.RevBlinkinLedDriver;
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import com.qualcomm.robotcore.hardware.DcMotor;
 
-@Autonomous(name = "TacoAuto1", preselectTeleOp = "TacoLights")
+//@Autonomous(name = "TacoAuto1", preselectTeleOp = "TacoLights")
 
 public class TacoAuto1 extends Taco_FF_Super_Class {
 

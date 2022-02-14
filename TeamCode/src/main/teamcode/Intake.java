@@ -1,35 +1,37 @@
 package org.firstinspires.ftc.teamcode;
 
-import static org.firstinspires.ftc.teamcode.Lift.winchPos;
-
-import static java.lang.Math.abs;
+import static org.firstinspires.ftc.teamcode.LiftAuto.takeDown;
+import static org.firstinspires.ftc.teamcode.LiftAuto.takeUp;
+import static org.firstinspires.ftc.teamcode.LiftClean.slow;
+import static org.firstinspires.ftc.teamcode.autoinit.blueDuck;
 
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.hardware.ColorSensor;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DistanceSensor;
 import com.qualcomm.robotcore.util.ElapsedTime;
+import java.lang.Math;
+
 
 import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
 
 public class Intake {
-    public ColorSensor color_REV_ColorRangeSensor;
+    static ColorSensor color_REV_ColorRangeSensor;
 
     public DcMotor take;
     public DcMotor lduck;
     public DcMotor rduck;
 
-    public double going = .27;
-    public double threshold = 3;
+    public double going = .25;
+    public double threshold = 3.0;
+
+    public int takeStop = 1451;
 
     public boolean override = false;
 
     static boolean full;
-    static boolean blue = true;
 
-
-
-    private final ElapsedTime timerIntake = new ElapsedTime();
+    private final ElapsedTime timerTake = new ElapsedTime();
     public final LinearOpMode intake;
 
     public Intake(LinearOpMode intake){
@@ -48,28 +50,34 @@ public class Intake {
         this.intake=intake;
     }
 
-    int intakePos(){
-        return (take.getCurrentPosition());
-    }
-
-    double prox(){
+    static double prox(){
         return ((DistanceSensor) color_REV_ColorRangeSensor).getDistance(DistanceUnit.CM);
     }
 
-    public void intaking(double voomin, double voomout){
-        if(((voomin > .3 && winchPos < 10) || Lift.blip) && !full){
-            take.setPower(-1);
-        } else if((voomout > .3 && voomin < .3) || Lift.blop) {
-            take.setPower(1);
-        } else {
-            if (((abs(intakePos()) % 75) > 5) || ((abs(intakePos()) % 75) > (75 -5))){
-                take.setPower(.025);
+    int currentPos(){
+        return (take.getCurrentPosition());
+    }
+
+    public void intakingStates(double voomin, double voomout) {
+            if (slow) {
+                take.setPower(-.5);
+            } else if (((voomin > .3 && LiftClean.winch.getCurrentPosition() < 20) || LiftClean.blip) && !full) {
+                take.setPower(-1);
+                timerTake.reset();
+            } else if (voomout > .3) {
+                take.setPower(.5);
             } else {
-                take.setPower(0);
+                if (timerTake.seconds() < .1) {
+                    take.setPower(0);
+                } else if (timerTake.seconds() < .75) {
+                    take.setPower(.25);
+                } else {
+                    take.setPower(0);
+                }
             }
         }
 
-    }
+
 
     public void sensorStuff(boolean a, boolean b){
         if (a){
@@ -80,34 +88,37 @@ public class Intake {
         if (override){
             full = false;
         } else {
-            full = !(((DistanceSensor) color_REV_ColorRangeSensor).getDistance(DistanceUnit.CM) > threshold);
+            full = !(prox() > threshold);
         }
-
     }
 
-    public void duck (double slow, double fast) {
-            if (blue) {
-                if (fast > .3) {
-                    lduck.setPower(1);
-                    rduck.setPower(1);
-                } else if (slow > .3) {
-                    lduck.setPower(going);
-                    rduck.setPower(going);
-                } else {
-                    lduck.setPower(0);
-                    rduck.setPower(0);
-                }
+    public void duck (double slow, double fast, boolean superSlow) {
+        if (!blueDuck) {
+            if (slow > .3) {
+                lduck.setPower(-going);
+                rduck.setPower(-going);
+            } else if (fast > .3) {
+                lduck.setPower(-1);
+                rduck.setPower(-1);
+            } else if (superSlow) {
+                lduck.setPower(-.1);
+                rduck.setPower(-.1);
             } else {
-                if (fast > .3) {
-                    lduck.setPower(1);
-                    rduck.setPower(1);
-                } else if (slow > .3) {
-                    lduck.setPower(-going);
-                    rduck.setPower(-going);
-                } else {
-                    lduck.setPower(0);
-                    rduck.setPower(0);
-                }
+                lduck.setPower(0);
+                rduck.setPower(0);
+            }
+        } else if (slow > .3) {
+            lduck.setPower(going);
+            rduck.setPower(going);
+        } else if (fast > .3) {
+            lduck.setPower(1);
+            rduck.setPower(1);
+        } else if (superSlow){
+            lduck.setPower(.1);
+            rduck.setPower(.1);
+        } else {
+            lduck.setPower(0);
+            rduck.setPower(0);
             }
         }
-}
+    }
