@@ -19,7 +19,7 @@ public class TacoTele2 extends teleinit {
                 intake.intakingStates(gamepad1.right_trigger, gamepad1.left_trigger);
                 intake.sensorStuff(gamepad1.a, gamepad1.b);
                 liftClean.armState(gamepad2.y, gamepad1.left_trigger, gamepad1.right_trigger, gamepad2.x, gamepad2.dpad_left,
-                        gamepad2.dpad_up, gamepad2.dpad_right, gamepad2.a, gamepad1.y);
+                        gamepad2.dpad_up, gamepad2.dpad_right, gamepad2.a, gamepad1.y, gamepad2.b, gamepad2.dpad_down);
                 telemetry.addData("Lift", LiftClean.winch.getCurrentPosition());
                 telemetry.addData("Blue", blue);
                 telemetry.addData("Override", intake.override);
