@@ -22,7 +22,6 @@ public class LiftAuto {
     public Servo rarm;
     public Servo larm;
     public Servo turret;
-    public Servo dump;
     public Servo upTake;
     public Servo finger;
 
@@ -78,7 +77,6 @@ public class LiftAuto {
         rarm = liftAuto.hardwareMap.get(ServoImplEx.class, "rarm");
         larm = liftAuto.hardwareMap.get(ServoImplEx.class, "larm");
         turret = liftAuto.hardwareMap.get(Servo.class, "turret");
-        dump = liftAuto.hardwareMap.get(Servo.class, "dump");
         upTake = liftAuto.hardwareMap.servo.get("upTake");
         finger = liftAuto.hardwareMap.servo.get("finger");
 
@@ -114,7 +112,6 @@ public class LiftAuto {
                     tRight = true;
                     tLeft = false;
                 } else {
-                    dump.setPosition(2);
                     armRTP(.075);
                     upTake.setPosition(takeDown);
                     liftRTP(50, 1);
@@ -124,8 +121,7 @@ public class LiftAuto {
             case UP:
                 if (liftLevel == LiftLevel.HIGH){
                     finger.setPosition(1);
-                    armRTP(.075);
-                    dump.setPosition(.2);
+                    armRTP(.05);
                     upTake.setPosition(takeDown);
                     timerlift.reset();
                     positioned = true;
@@ -133,47 +129,41 @@ public class LiftAuto {
                     liftRTP(375, 1);
                     liftState = LiftState.UP_WAIT;
                 } else if(liftLevel == LiftLevel.MID) {
-                    armRTP(.075);
-                    dump.setPosition(.2);
+                    armRTP(.05);
                     upTake.setPosition(takeDown);
                     timerlift.reset();
                     positioned = true;
                     center = false;
-                    liftRTP(50, 1);
+                    liftRTP(100, 1);
                     liftState = LiftState.UP_WAIT;
                 } else if(liftLevel == LiftLevel.LOW) {
                     upTake.setPosition(takeDown);
-                    armRTP(.075);
-                    dump.setPosition(.2);
+                    armRTP(.05);
                     timerlift.reset();
                     positioned = true;
                     center = false;
-                    liftRTP(50, 1);
+                    liftRTP(100, 1);
                     liftState = LiftState.UP_WAIT;
                 }
                 break;
 
                 case UP_WAIT:
                 if (liftLevel == LiftLevel.HIGH){
-                    if (timerlift.seconds() >= .25){
-                        dump.setPosition(.6);
+                    if (timerlift.seconds() >= .5){
                         liftState = LiftState.UP2;
                     }
                 } else if(liftLevel == LiftLevel.MID) {
-                    if (timerlift.seconds() >= .25){
+                    if (timerlift.seconds() >= .5){
                         if (!tLeft && !tRight){
                             liftRTP(250, 1);
                         }
-                        dump.setPosition(.6);
                         liftState = LiftState.UP2;
                     }
-
                 } else if(liftLevel == LiftLevel.LOW) {
-                    if (timerlift.seconds() >= .25){
+                    if (timerlift.seconds() >= .5){
                         if (!tLeft && !tRight){
-                            liftRTP(50, 1);
+                            liftRTP(0, 1);
                         }
-                        dump.setPosition(.6);
                         liftState = LiftState.UP2;
                     }
                 }
@@ -181,21 +171,16 @@ public class LiftAuto {
 
             case UP2:
                 if (liftLevel == LiftLevel.HIGH){
-                    armRTP(.72);
-                    dump.setPosition(.4);
+                    armRTP(.71);
                     timerlift.reset();
                     liftState = LiftState.UP3;
                 } else if (liftLevel == LiftLevel.MID){
-                    dump.setPosition(.95);
                     armRTP(.82);
                     timerlift.reset();
-                    dump.setPosition(.5);
                     liftState = LiftState.UP3;
                 } else if (liftLevel == LiftLevel.LOW){
-                    dump.setPosition(.9);
-                    armRTP(.85);
+                    armRTP(.86);
                     timerlift.reset();
-                    dump.setPosition(.45);
                     liftRTP(50, 1);
                     liftState = LiftState.UP3;
                 }
@@ -205,7 +190,7 @@ public class LiftAuto {
                 if (timerlift.seconds() > 1.5) {
                     if (left) {
                         if (liftLevel == LiftLevel.LOW){
-                            turret.setPosition(.3);
+                            turret.setPosition(.28);
                         } else {
                             turret.setPosition(.25);
                         }
@@ -214,9 +199,9 @@ public class LiftAuto {
                         liftState = LiftState.WAIT;
                     } else if (right) {
                         if (liftLevel == LiftLevel.LOW){
-                            turret.setPosition(.8);
+                            turret.setPosition(.72);
                         } else {
-                            turret.setPosition(.85);
+                            turret.setPosition(.78);
                         }
                         isCentered = false;
                         low = true;
@@ -228,7 +213,7 @@ public class LiftAuto {
 
             case WAIT:
                 if (timerlift.seconds() > 1){
-                    finger.setPosition(.7);
+                    finger.setPosition(.85);
                     timerlift.reset();
                     liftState = LiftState.DUMP_BACK;
                     timerlift.reset();
@@ -238,7 +223,6 @@ public class LiftAuto {
             case DUMP_BACK:
                 if (timerlift.seconds() >= 1){
                     upTake.setPosition(takeDown);
-                    dump.setPosition(.35);
                     low = false;
                     liftState = LiftState.ARM_DOWN;
                 }
@@ -247,7 +231,6 @@ public class LiftAuto {
             case ARM_DOWN:
                 turret.setPosition(.55);
                 finger.setPosition(1);
-                dump.setPosition(.35);
                 positioned = false;
                 center = true;
                 armRTP(.6);
@@ -276,7 +259,6 @@ public class LiftAuto {
                 break;
 
             case TAKEPOS:
-                    dump.setPosition(.35);
                     armRTP(.075);
                     upTake.setPosition(takeDown);
                     liftRTP(50, 1);

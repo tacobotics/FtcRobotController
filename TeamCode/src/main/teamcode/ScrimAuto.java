@@ -7,8 +7,8 @@ import static org.firstinspires.ftc.teamcode.LiftAuto.right;
 
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 
-//@Autonomous(name = "TacAuto", preselectTeleOp = "TacoTele2")
-public class TacAuto extends autoinit {
+@Autonomous(name = "ScrimAuto", preselectTeleOp = "ScrimTele")
+public class ScrimAuto extends autoinit {
 
     public enum AutoState{
         DRIVE1,
@@ -58,11 +58,11 @@ public class TacAuto extends autoinit {
             case DRIVE2: //left/right connotates which direction the turret goes
                 if (blue && left) {
                     liftAuto.upTake.setPosition(LiftAuto.takeUp);
-                    drive.right(525, .5);
+                    drive.right(-375, .5);
                     sleep(2000);
-                    drive.go_same(-1600, .5);
-                    liftRTP(0, 1);
-                    sleep(2000);
+                    drive.go_same(-3500, .5);
+                    liftRTP(0, 3000);
+                    sleep(3000);
                     stop();
                 } else if (blue && right) {
                     liftAuto.upTake.setPosition(LiftAuto.takeUp);
@@ -74,11 +74,11 @@ public class TacAuto extends autoinit {
                     stop();
                 } else if (!blue && right){
                     liftAuto.upTake.setPosition(LiftAuto.takeUp);
-                    drive.right(375, .5);
+                    drive.right(425, .5);
                     sleep(2000);
-                    drive.go_same(1400, .5);
+                    drive.go_same(-3500, .5);
                     liftRTP(0, 1);
-                    sleep(2000);
+                    sleep(3000);
                     stop();
                 } else if (!blue && left){
                     liftAuto.upTake.setPosition(LiftAuto.takeUp);

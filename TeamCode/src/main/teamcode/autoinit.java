@@ -42,6 +42,9 @@ public abstract class autoinit extends New_Super_Class {
         while (!isStarted() && !isStopRequested() && !opModeIsActive()) {
             Spot();
         }
+        while  (isStopRequested()){
+            webcam.closeCameraDevice();
+        }
     }
 
     public void Spot() {

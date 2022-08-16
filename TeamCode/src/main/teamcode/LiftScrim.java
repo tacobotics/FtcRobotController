@@ -13,7 +13,7 @@ import com.qualcomm.robotcore.hardware.ServoImplEx;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
 
-public class LiftClean {
+public class LiftScrim {
     static DcMotor winch;
     public Servo rarm;
     public Servo larm;
@@ -38,7 +38,8 @@ public class LiftClean {
     public enum LiftLevel{
         NEUTRAL,
         HIGH,
-        CAP
+        CAP,
+        SCRIM
     }
 
     LiftState liftState = LiftState.TAKE;
@@ -61,25 +62,25 @@ public class LiftClean {
     public boolean debounce2 = false;
 
     private final ElapsedTime timerlift = new ElapsedTime();
-    public final LinearOpMode liftClean;
+    public final LinearOpMode liftScrim;
 
-    public LiftClean(LinearOpMode liftClean){
-        winch = liftClean.hardwareMap.dcMotor.get("winch");
+    public LiftScrim(LinearOpMode liftScrim){
+        winch = liftScrim.hardwareMap.dcMotor.get("winch");
         winch.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         winch.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         winch.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
 
-        rarm = liftClean.hardwareMap.get(ServoImplEx.class, "rarm");
-        larm = liftClean.hardwareMap.get(ServoImplEx.class, "larm");
-        turret = liftClean.hardwareMap.get(Servo.class, "turret");
-        upTake = liftClean.hardwareMap.servo.get("upTake");
-        finger = liftClean.hardwareMap.servo.get("finger");
+        rarm = liftScrim.hardwareMap.get(ServoImplEx.class, "rarm");
+        larm = liftScrim.hardwareMap.get(ServoImplEx.class, "larm");
+        turret = liftScrim.hardwareMap.get(Servo.class, "turret");
+        upTake = liftScrim.hardwareMap.servo.get("upTake");
+        finger = liftScrim.hardwareMap.servo.get("finger");
 
         ((PwmControl)rarm).setPwmRange(new PwmControl.PwmRange(500, 2500));
         ((PwmControl)larm).setPwmRange(new PwmControl.PwmRange(500, 2500));
         ((PwmControl)turret).setPwmRange(new PwmControl.PwmRange(800, 2380));
 
-        this.liftClean = liftClean;
+        this.liftScrim = liftScrim;
     }
 
     public void armRTP(double parm){
@@ -93,7 +94,8 @@ public class LiftClean {
         winch.setPower(power);
     }
 
-    public void armState(boolean y, double leftTrig, double rightTrig, boolean x, boolean left, boolean right, boolean a, boolean y1, boolean b, boolean down1){
+    public void armState(boolean y, double leftTrig, double rightTrig, boolean x, boolean left, boolean right, boolean up, boolean a,
+                         boolean y1, boolean b, boolean down1){
         switch (liftState) {
             case TAKE:
                 if (y) {
@@ -111,6 +113,9 @@ public class LiftClean {
                     liftState = LiftState.UP;
                     tRight = true;
                     liftLevel = LiftLevel.NEUTRAL;
+                } else if (b){
+                    liftState= LiftState.UP;
+                    liftLevel = LiftLevel.SCRIM;
                 } else if (y1){
                     finger.setPosition(.3);
                     armRTP(.075);
@@ -176,6 +181,14 @@ public class LiftClean {
                     } else {
                         liftRTP(325,1);
                     }
+                } else if (liftLevel == LiftLevel.SCRIM){
+                    armRTP(.075);
+                    upTake.setPosition(takeDown);
+                    timerlift.reset();
+                    positioned = true;
+                    center = false;
+                    liftRTP(300, 1);
+                    liftState = LiftState.UP_WAIT;
                 }
                 break;
 
@@ -193,6 +206,10 @@ public class LiftClean {
                         liftState = LiftState.UP2;
                     }
 
+                } else if (liftLevel == LiftLevel.SCRIM){
+                    if (timerlift.seconds() >= .3){
+                        liftState = LiftState.UP2;
+                    }
                 }
                 break;
 
@@ -209,6 +226,11 @@ public class LiftClean {
                     }
                     timerlift.reset();
                     liftState = LiftState.UP3;
+                } else if (liftLevel == LiftLevel.SCRIM){
+                    liftRTP(0, .5);
+                    armRTP(.63);
+                    timerlift.reset();
+                    liftState = LiftState.UP3;
                 }
                 break;
 
@@ -218,12 +240,34 @@ public class LiftClean {
                     liftState = LiftState.DUMP_BACK;
                 } else if (liftLevel == LiftLevel.HIGH){
                     upTake.setPosition(takeUp);
-                    if (x) {
+                    if (left){
+                        armRTP(.75);
+                        turret.setPosition(0);
+                    } else if (right){
+                        armRTP(.75);
+                        turret.setPosition(1);
+                    } else if (up){
+                        armRTP(.77);
+                        turret.setPosition(.5);
+                    } else if (x){
                         finger.setPosition(.5);
                         timerlift.reset();
                         liftState = LiftState.DUMP_BACK;
                     }
-                } else if (liftLevel == LiftLevel.NEUTRAL){
+                } else if (liftLevel == LiftLevel.SCRIM){
+                    upTake.setPosition(takeUp);
+                    if (left){
+                        turret.setPosition(0);
+                    } else if (right){
+                        turret.setPosition(1);
+                    } else if (up){
+                        turret.setPosition(.5);
+                    } else if (x){
+                        finger.setPosition(.4);
+                        timerlift.reset();
+                        liftState = LiftState.DUMP_BACK;
+                    }
+                }  else if (liftLevel == LiftLevel.NEUTRAL){
                     if (timerlift.seconds() >= .5){
                         liftRTP(0, 1);
                         if (tLeft){
